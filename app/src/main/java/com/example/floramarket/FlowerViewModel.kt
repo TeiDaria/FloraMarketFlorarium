@@ -71,4 +71,12 @@ class FlowerViewModel: ViewModel() {
     fun getQuantityInCart(flowerId: String): Int {
         return cartItems.find { it.first.id == flowerId }?.second ?: 0
     }
+
+    fun selectFlowerFromCart(flower: Flower){
+        selectedFlower = flower
+    }
+
+    fun openCart(){
+        isCartOpen = true
+    }
 }

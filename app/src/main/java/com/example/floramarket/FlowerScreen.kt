@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -57,6 +56,9 @@ import androidx.compose.ui.unit.sp
 fun FlowerApp(viewModel: FlowerViewModel){
     val selectedFlower = viewModel.selectedFlower
 
+    // Определяем, откуда пришли на экран товара
+    val cameFromCart = viewModel.isCartOpen  // Если корзина была открыта, значит пришли из неё
+
     when {
         selectedFlower != null -> {
             FlowerDetailScreen(
@@ -64,7 +66,17 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 onClose = {viewModel.closeDetail()},
                 onAddToCart = {viewModel.addToCart(it)},
                 onUpdateQuantity = { flower, qty -> viewModel.updateQuantity(flower,qty)},
-                quantityInCart = viewModel.getQuantityInCart(selectedFlower.id)
+                quantityInCart = viewModel.getQuantityInCart(selectedFlower.id),
+                cartItemCount = viewModel.getItemCount(),
+                cameFromCart = cameFromCart,
+                onNavigateToHome = {
+                    viewModel.closeDetail()
+                    viewModel.toggleCart()
+                },
+                onNavigateToCart = {
+                    viewModel.closeDetail()
+                    viewModel.openCart()
+                }
             )
         }
         viewModel.isCartOpen -> {
@@ -73,7 +85,10 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 totalPrice = viewModel.getTotalPrice(),
                 onClose = {viewModel.toggleCart()},
                 onRemoveItem = {viewModel.removeFromCart(it)},
-                onUpdateQuantity = { flower, qty -> viewModel.updateQuantity(flower,qty)}
+                onUpdateQuantity = { flower, qty -> viewModel.updateQuantity(flower,qty)},
+                onFlowerClick = { flower ->
+                    viewModel.selectFlowerFromCart(flower)
+                }
             )
         }
         else -> {
@@ -234,7 +249,11 @@ fun FlowerDetailScreen(
     onClose: () -> Unit,
     onAddToCart: (Flower) -> Unit,
     onUpdateQuantity: (Flower, Int) -> Unit,
-    quantityInCart: Int
+    quantityInCart: Int,
+    cartItemCount: Int,
+    cameFromCart: Boolean,
+    onNavigateToHome: () -> Unit,
+    onNavigateToCart: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -246,6 +265,66 @@ fun FlowerDetailScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            Icons.Default.Home,
+                            contentDescription = "Главная"
+                        )
+                    },
+                    label = { Text("Главная")},
+                    selected = !cameFromCart,
+                    onClick = onNavigateToHome
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Box{
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = "Корзина"
+                            )
+                            if (cartItemCount>0){
+                                Badge(
+                                    modifier = Modifier.align(Alignment.TopEnd)
+                                ){
+                                    Text(cartItemCount.toString())
+                                }
+                            }
+                        }
+                    },
+                    label = {Text("Корзина")},
+                    selected = cameFromCart,
+                    onClick = onNavigateToCart
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            Icons.Default.Favorite,
+                            contentDescription = "Избранное"
+                        )
+                    },
+                    label = { Text("Избранное")},
+                    selected = false,
+                    onClick = { /* Будет позже */ }
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Профиль"
+                        )
+                    },
+                    label = { Text("Профиль") },
+                    selected = false,
+                    onClick = { /* Будет позже */ }
+                )
+            }
         }
     ) {
         paddingValues ->
@@ -255,7 +334,6 @@ fun FlowerDetailScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            // Большая картинка
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -374,6 +452,7 @@ fun CartScreen(
     onClose: () -> Unit,
     onRemoveItem: (Flower) -> Unit,
     onUpdateQuantity: (Flower, Int) -> Unit,
+    onFlowerClick: (Flower) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -518,7 +597,8 @@ fun CartScreen(
                         flower = flower,
                         quantity = quantity,
                         onRemove = { onRemoveItem(flower) },
-                        onQuantityChange = { newQty -> onUpdateQuantity(flower, newQty)}
+                        onQuantityChange = { newQty -> onUpdateQuantity(flower, newQty)},
+                        onClick = { onFlowerClick(flower) }
                     )
                 }
             }
@@ -531,10 +611,13 @@ fun CartItemCard(
     flower: Flower,
     quantity: Int,
     onRemove: () -> Unit,
-    onQuantityChange: (Int) -> Unit
+    onQuantityChange: (Int) -> Unit,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
