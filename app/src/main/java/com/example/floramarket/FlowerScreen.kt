@@ -1,5 +1,6 @@
 package com.example.floramarket
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +21,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -53,7 +59,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -77,18 +86,18 @@ fun FlowerApp(viewModel: FlowerViewModel){
             FlowerDetailScreen(
                 flower = selectedFlower,
                 onClose = {viewModel.closeDetail()},
-                onAddToCart = {viewModel.addToCart(it)},
+                onAddToCart = {flower -> viewModel.addToCart(flower)},
                 onUpdateQuantity = { flower, qty -> viewModel.updateQuantity(flower,qty)},
                 quantityInCart = viewModel.getQuantityInCart(selectedFlower.id),
                 cartItemCount = viewModel.getItemCount(),
                 cameFromCart = cameFromCart,
                 onNavigateToHome = {
                     viewModel.closeDetail()
-                    viewModel.toggleCart()
+                    viewModel.isCartOpen = false
                 },
                 onNavigateToCart = {
                     viewModel.closeDetail()
-                    viewModel.openCart()
+                    viewModel.isCartOpen = true
                 }
             )
         }
@@ -204,18 +213,63 @@ fun CatalogScreen(
             }
         }
     ){ paddingValues ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            items(flowers) { flower ->
-                FlowerCard(
-                    flower = flower,
-                    onClick = { onFlowerClick(flower) }
-                )
+        if (flowers.isEmpty()){
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    Text(
+                        text = "🌸",
+                        fontSize = 72.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Здесь пока нет товаров",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Нажмите на кнопку '+' чтобы добавить свой первый букет",
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onCreateBouquetClick,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Добавить букет")
+                    }
+                }
+            }
+        }else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                items(flowers, key = {it.id}) { flower ->
+                    FlowerCard(
+                        flower = flower,
+                        onClick = { onFlowerClick(flower) }
+                    )
+                }
             }
         }
     }
@@ -234,7 +288,6 @@ fun FlowerCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ){
         Column {
-            // Картинка (пока просто цветной прямоугольник, если нет URL)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -254,17 +307,35 @@ fun FlowerCard(
                 Text(
                     text = flower.name,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    minLines = 2
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "%.2f ₽".format(flower.price),
+                    text = formatPrice(flower.price),
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 18.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${flower.availableQuantity} шт.",
+                    fontSize = 12.sp,
+                    color = Color.Gray
                 )
             }
         }
+    }
+}
+
+fun formatPrice(price: Double): String {
+    return when {
+        price >= 1_000_000 -> "%.1fM ₽".format(price / 1_000_000)
+        else -> "%.0f ₽".format(price)
     }
 }
 
@@ -273,18 +344,26 @@ fun FlowerCard(
 fun FlowerDetailScreen(
     flower: Flower,
     onClose: () -> Unit,
-    onAddToCart: (Flower) -> Unit,
-    onUpdateQuantity: (Flower, Int) -> Unit,
+    onAddToCart: (Flower) -> Boolean,
+    onUpdateQuantity: (Flower, Int) -> Boolean,
     quantityInCart: Int,
     cartItemCount: Int,
     cameFromCart: Boolean,
     onNavigateToHome: () -> Unit,
     onNavigateToCart: () -> Unit
 ) {
+    val context = LocalContext.current
+
+    val photos = flower.imageUrls.ifEmpty { listOf(flower.mainImageUrl) }
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        pageCount = { flower.imageUrls.ifEmpty { listOf(flower.mainImageUrl) }.size }
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(flower.name)},
+                title = { Text(flower.name) },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
@@ -301,28 +380,28 @@ fun FlowerDetailScreen(
                             contentDescription = "Главная"
                         )
                     },
-                    label = { Text("Главная")},
+                    label = { Text("Главная") },
                     selected = !cameFromCart,
                     onClick = onNavigateToHome
                 )
 
                 NavigationBarItem(
                     icon = {
-                        Box{
+                        Box {
                             Icon(
                                 Icons.Default.ShoppingCart,
                                 contentDescription = "Корзина"
                             )
-                            if (cartItemCount>0){
+                            if (cartItemCount > 0) {
                                 Badge(
                                     modifier = Modifier.align(Alignment.TopEnd)
-                                ){
+                                ) {
                                     Text(cartItemCount.toString())
                                 }
                             }
                         }
                     },
-                    label = {Text("Корзина")},
+                    label = { Text("Корзина") },
                     selected = cameFromCart,
                     onClick = onNavigateToCart
                 )
@@ -334,7 +413,7 @@ fun FlowerDetailScreen(
                             contentDescription = "Избранное"
                         )
                     },
-                    label = { Text("Избранное")},
+                    label = { Text("Избранное") },
                     selected = false,
                     onClick = { /* Будет позже */ }
                 )
@@ -352,116 +431,168 @@ fun FlowerDetailScreen(
                 )
             }
         }
-    ) {
-        paddingValues ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(16.dp)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .background(Color(0xFFF5F5F5))
-                    .clip(RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ){
-                Text(
-                    text = "🌺",
-                    fontSize = 120.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = flower.name,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "%.2f ₽".format(flower.price),
-                fontSize = 24.sp,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = flower.description,
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (quantityInCart==0){
-                Button(
-                    onClick = { onAddToCart(flower) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ){
-                    Text(
-                        text = "Добавить в корзину",
-                        fontSize = 18.sp
-                    )
-                }
-            } else {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ){
-                    Row(
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        IconButton(
-                            onClick = {
-                                onUpdateQuantity(flower, quantityInCart-1)
-                            },
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Remove,
-                                contentDescription = "Уменьшить",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
+                            .background(Color(0xFFF5F5F5)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Здесь будет AsyncImage
+                        Text("🌸", fontSize = 120.sp)
+                    }
+                }
+                if (photos.size > 1) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
                         Text(
-                            text = quantityInCart.toString(),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            text = "${pagerState.currentPage + 1}/${photos.size}",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
+                    }
+                }
+            }
 
-                        IconButton(
-                            onClick = {
-                                onUpdateQuantity(flower, quantityInCart + 1)
-                            },
-                            modifier = Modifier.size(48.dp)
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+
+                Text(
+                    text = flower.name,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "%.2f ₽".format(flower.price),
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "В наличии: ${flower.availableQuantity} шт.",
+                        fontSize = 14.sp,
+                        color = if (flower.availableQuantity > 0) Color(0xFF4CAF50) else Color.Red
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = flower.description,
+                    fontSize = 16.sp,
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (quantityInCart == 0) {
+                    Button(
+                        onClick = {
+                            val success = onAddToCart(flower)
+                            if (!success) {
+                                Toast.makeText(
+                                    context,
+                                    "Доступно только ${flower.availableQuantity} шт.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "Добавить в корзину",
+                            fontSize = 18.sp
+                        )
+                    }
+                } else {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Увеличить",
-                                tint = MaterialTheme.colorScheme.primary
+                            IconButton(
+                                onClick = {
+                                    onUpdateQuantity(flower, quantityInCart - 1)
+                                },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Remove,
+                                    contentDescription = "Уменьшить",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Text(
+                                text = quantityInCart.toString(),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
+
+                            IconButton(
+                                onClick = {
+                                    val success = onUpdateQuantity(flower, quantityInCart + 1)
+                                    if (!success) {
+                                        Toast.makeText(
+                                            context,
+                                            "Доступно только ${flower.availableQuantity} шт.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Увеличить",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
@@ -477,7 +608,7 @@ fun CartScreen(
     totalPrice: Double,
     onClose: () -> Unit,
     onRemoveItem: (Flower) -> Unit,
-    onUpdateQuantity: (Flower, Int) -> Unit,
+    onUpdateQuantity: (Flower, Int) -> Boolean,
     onFlowerClick: (Flower) -> Unit
 ) {
     Scaffold(
@@ -637,9 +768,11 @@ fun CartItemCard(
     flower: Flower,
     quantity: Int,
     onRemove: () -> Unit,
-    onQuantityChange: (Int) -> Unit,
+    onQuantityChange: (Int) -> Boolean,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -652,7 +785,6 @@ fun CartItemCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Маленькая иконка
             Box(
                 modifier = Modifier
                     .size(60.dp)
@@ -677,7 +809,6 @@ fun CartItemCard(
                 )
             }
 
-            // Управление количеством
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { onQuantityChange(quantity - 1) }
@@ -691,11 +822,20 @@ fun CartItemCard(
                 Text(
                     text = quantity.toString(),
                     modifier = Modifier.width(24.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
 
                 IconButton(
-                    onClick = { onQuantityChange(quantity + 1) }
+                    onClick = {
+                        val success = onQuantityChange(quantity + 1)
+                        if (!success){
+                            Toast.makeText(
+                                context,
+                                "Доступно только ${flower.availableQuantity} шт.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,

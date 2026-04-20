@@ -48,14 +48,19 @@ class CreateBouquetViewModel : ViewModel() {
 
     fun updatePrice(newPrice: String){
         if (newPrice.isEmpty() || newPrice.matches(Regex("^\\d*\\.?\\d*\$"))){
-            priceInput = newPrice
+            val doubleValue = newPrice.toDoubleOrNull()
+            if (doubleValue == null || doubleValue <= 1_000_000.0) {
+                priceInput = newPrice
+            }
         }
     }
 
     fun updateQuantity(newQuantity: String) {
-        // Только целые числа
         if (newQuantity.isEmpty() || newQuantity.matches(Regex("^\\d+$"))) {
-            quantityInput = newQuantity
+            val intValue = newQuantity.toIntOrNull()
+            if (intValue==null || intValue <= 10_000){
+                quantityInput = newQuantity
+            }
         }
     }
 
@@ -95,8 +100,20 @@ class CreateBouquetViewModel : ViewModel() {
                 onError("Укажите корректную цену")
                 return
             }
+            price!! > 1_000_000 -> {
+                onError("Максимальная цена — 1 000 000 ₽")
+                return
+            }
             quantity == null -> {
                 onError("Укажите количество в наличии")
+                return
+            }
+            quantity!! > 10_000 -> {
+                onError("Максимальное количество — 10 000 шт.")
+                return
+            }
+            quantity!! <= 0 -> {
+                onError("Количество должно быть больше 0")
                 return
             }
         }
@@ -119,6 +136,16 @@ class CreateBouquetViewModel : ViewModel() {
                 fullDescription.isNotBlank() &&
                 price != null &&
                 quantity != null
+    }
+
+    fun resetForm() {
+        imageUrls = emptyList()
+        name = ""
+        shortDescription = ""
+        fullDescription = ""
+        priceInput = ""
+        quantityInput = ""
+        isGeneratingName = false
     }
 
 }

@@ -194,11 +194,19 @@ fun CreateBouquetScreen(
                         value = viewModel.priceInput,
                         onValueChange = { viewModel.updatePrice(it) },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("2500") },
+                        placeholder = { Text("до 1 000 000") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
                         leadingIcon = { Text("₽") }
                     )
+
+                    if (viewModel.priceInput.toDoubleOrNull()?.let { it > 1_000_000 } ?: false) {
+                        Text(
+                            text = "Максимум 1 000 000 ₽",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
@@ -212,10 +220,18 @@ fun CreateBouquetScreen(
                         value = viewModel.quantityInput,
                         onValueChange = { viewModel.updateQuantity(it) },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("10") },
+                        placeholder = { Text("до 10 000") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
                     )
+
+                    if (viewModel.quantityInput.toIntOrNull()?.let { it > 10_000 } ?: false) {
+                        Text(
+                            text = "Максимум 10 000 шт.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 
@@ -226,6 +242,7 @@ fun CreateBouquetScreen(
                     viewModel.publishBouquet(
                         onSuccess = { draft ->
                             onBouquetCreated(draft)
+                            viewModel.resetForm()
                         },
                         onError = { error ->
                             // TODO: Показать ошибку

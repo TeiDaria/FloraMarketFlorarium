@@ -1,15 +1,14 @@
 package com.example.floramarket
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 
 class FlowerViewModel: ViewModel() {
-
-    private val _allFlowers = mutableStateOf(SampleData.flowers)
-    val allFlowers:List<Flower>
-        get() = _allFlowers.value
+    private val _allFlowers = mutableStateListOf<Flower>()
+    val allFlowers: List<Flower> = _allFlowers // ← Только для чтения
 
     var selectedFlower by mutableStateOf<Flower?>(null)
         private set
@@ -18,7 +17,6 @@ class FlowerViewModel: ViewModel() {
         private set
 
     var isCartOpen by mutableStateOf(false)
-        private set
 
     fun selectFlower(flower:Flower){
         selectedFlower = flower
@@ -29,11 +27,15 @@ class FlowerViewModel: ViewModel() {
         selectedFlower = null
     }
 
-    fun addToCart(flower: Flower){
+    fun addToCart(flower: Flower) :Boolean {
         val existingIndex = cartItems.indexOfFirst { it.first.id == flower.id }
+        val currentQuantity = cartItems.find { it.first.id == flower.id }?.second ?: 0
+
+        if (currentQuantity >= flower.availableQuantity) {
+            return false
+        }
 
         if (existingIndex != -1){
-            //Товар уже есть, увеличиваем количество
             val updatedItems = cartItems.toMutableList()
             val (existingFlower, quantity) = updatedItems[existingIndex]
             updatedItems[existingIndex] = existingFlower to (quantity+1)
@@ -41,20 +43,25 @@ class FlowerViewModel: ViewModel() {
         } else {
             cartItems = cartItems + (flower to 1)
         }
+        return true
     }
 
     fun removeFromCart(flower: Flower){
         cartItems = cartItems.filter{it.first.id != flower.id}
     }
 
-    fun updateQuantity(flower:Flower, newQuantity: Int){
+    fun updateQuantity(flower:Flower, newQuantity: Int): Boolean{
         if (newQuantity <= 0){
             removeFromCart(flower)
+            return true
+        } else if (newQuantity > flower.availableQuantity) {
+            return false
         } else{
             cartItems = cartItems.map{
                 if (it.first.id == flower.id) it.first to newQuantity
                 else it
             }
+            return true
         }
     }
 
@@ -90,11 +97,12 @@ class FlowerViewModel: ViewModel() {
             id = System.currentTimeMillis().toString(),
             name = bouquet.name,
             price = bouquet.price ?: 0.0,
-            imageUrl = bouquet.imageUrls.firstOrNull() ?: "",
+            mainImageUrl = bouquet.imageUrls.firstOrNull() ?: "",
             imageUrls = bouquet.imageUrls,
-            description = bouquet.fullDescription
+            description = bouquet.fullDescription,
+            availableQuantity = bouquet.quantity ?: 1
         )
 
-        _allFlowers.value = _allFlowers.value + newFlower
+        _allFlowers.add(newFlower)
     }
 }
