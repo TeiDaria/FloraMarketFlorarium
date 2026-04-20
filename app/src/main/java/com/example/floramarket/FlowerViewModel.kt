@@ -6,6 +6,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 
 class FlowerViewModel: ViewModel() {
+
+    private val _allFlowers = mutableStateOf(SampleData.flowers)
+    val allFlowers:List<Flower>
+        get() = _allFlowers.value
+
     var selectedFlower by mutableStateOf<Flower?>(null)
         private set
 
@@ -78,5 +83,18 @@ class FlowerViewModel: ViewModel() {
 
     fun openCart(){
         isCartOpen = true
+    }
+
+    fun addNewBouquet(bouquet: BouquetDraft) {
+        val newFlower = Flower(
+            id = System.currentTimeMillis().toString(),
+            name = bouquet.name,
+            price = bouquet.price ?: 0.0,
+            imageUrl = bouquet.imageUrls.firstOrNull() ?: "",
+            imageUrls = bouquet.imageUrls,
+            description = bouquet.fullDescription
+        )
+
+        _allFlowers.value = _allFlowers.value + newFlower
     }
 }

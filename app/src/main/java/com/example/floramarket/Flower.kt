@@ -4,8 +4,10 @@ data class Flower(
     val id: String,
     val name: String,
     val price: Double,
-    val imageUrl: String,
-    val description: String
+    val imageUrl: String, // главное фото
+    val imageUrls: List<String> = emptyList(),
+    val description: String,
+    val isAvailable: Boolean = true
 )
 
 // Для демонстрации создадим тестовые данные

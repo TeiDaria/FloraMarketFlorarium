@@ -35,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +45,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,11 +60,19 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun FlowerApp(viewModel: FlowerViewModel){
     val selectedFlower = viewModel.selectedFlower
-
-    // Определяем, откуда пришли на экран товара
-    val cameFromCart = viewModel.isCartOpen  // Если корзина была открыта, значит пришли из неё
+    val cameFromCart = viewModel.isCartOpen
+    var isCreatingBouquet by remember { mutableStateOf(false) }
 
     when {
+        isCreatingBouquet -> {
+            CreateBouquetScreen(
+                onNavigateBack = { isCreatingBouquet = false},
+                onBouquetCreated = { draft ->
+                    viewModel.addNewBouquet(draft)
+                    isCreatingBouquet = false
+                }
+            )
+        }
         selectedFlower != null -> {
             FlowerDetailScreen(
                 flower = selectedFlower,
@@ -93,10 +106,11 @@ fun FlowerApp(viewModel: FlowerViewModel){
         }
         else -> {
             CatalogScreen(
-                flowers = SampleData.flowers,
+                flowers = viewModel.allFlowers,
                 cartItemCount = viewModel.getItemCount(),
                 onFlowerClick = {viewModel.selectFlower(it)},
-                onCartClick = {viewModel.toggleCart()}
+                onCartClick = {viewModel.toggleCart()},
+                onCreateBouquetClick = { isCreatingBouquet = true }
             )
         }
     }
@@ -109,7 +123,8 @@ fun CatalogScreen(
     flowers: List<Flower>,
     cartItemCount: Int,
     onFlowerClick: (Flower) -> Unit,
-    onCartClick: () -> Unit
+    onCartClick: () -> Unit,
+    onCreateBouquetClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -174,6 +189,17 @@ fun CatalogScreen(
                     label = { Text("Профиль") },
                     selected = false,
                     onClick = { /* Будет позже */ }
+                )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onCreateBouquetClick,
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Создать букет"
                 )
             }
         }
