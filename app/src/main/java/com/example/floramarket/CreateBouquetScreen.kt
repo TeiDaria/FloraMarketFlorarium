@@ -21,10 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,20 +74,30 @@ fun CreateBouquetScreen(
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                item {
+                    var showImagePicker by remember { mutableStateOf(false)}
+
+                    rememberImagePicker(
+                        showPicker = showImagePicker,
+                        onImageSelected = { uri ->
+                            viewModel.addImage(uri.toString())
+                        },
+                        onPickerDismissed = {
+                            showImagePicker = false
+                        }
+                    )
+
+                    AddImageButton(
+                        onClick = { showImagePicker = true}
+                    )
+                }
+
                 items(viewModel.imageUrls,
                     key = {url -> url.hashCode().toString() + viewModel.imageUrls.indexOf(url)}
                 ) { imageUrl ->
                     ImagePreviewCard(
                         imageUrl = imageUrl,
                         onRemove = { viewModel.removeImage(imageUrl) }
-                    )
-                }
-
-                item {
-                    AddImageButton(
-                        onClick = {
-                            // Здесь будет выбор фото из галереи
-                            viewModel.addImage("https://picsum.photos/200/300?random=${System.currentTimeMillis()}")                        }
                     )
                 }
             }
@@ -281,13 +293,23 @@ fun ImagePreviewCard(
             .background(Color(0xFFF5F5F5))
             .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
     ) {
-        // Здесь будет AsyncImage когда подключим Coil
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("🌸", fontSize = 40.sp)
+        if (imageUrl.isNotEmpty() && imageUrl.startsWith("file://") || imageUrl.startsWith("content://") || imageUrl.startsWith("http")){
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "Фото букета",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            // заглушка
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🌸", fontSize = 40.sp)
+            }
         }
+
 
         // Кнопка удаления
         IconButton(
