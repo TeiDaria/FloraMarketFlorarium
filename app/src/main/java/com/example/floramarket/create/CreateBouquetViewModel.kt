@@ -1,9 +1,10 @@
-package com.example.floramarket
+package com.example.floramarket.create
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.floramarket.model.BouquetDraft
 
 class CreateBouquetViewModel : ViewModel() {
 

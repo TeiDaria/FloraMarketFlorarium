@@ -1,4 +1,4 @@
-package com.example.floramarket
+package com.example.floramarket.create
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult

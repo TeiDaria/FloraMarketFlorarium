@@ -1,10 +1,12 @@
-package com.example.floramarket
+package com.example.floramarket.viewmodel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.floramarket.model.BouquetDraft
+import com.example.floramarket.model.Flower
 
 class FlowerViewModel: ViewModel() {
     private val _allFlowers = mutableStateListOf<Flower>()
@@ -18,7 +20,7 @@ class FlowerViewModel: ViewModel() {
 
     var isCartOpen by mutableStateOf(false)
 
-    fun selectFlower(flower:Flower){
+    fun selectFlower(flower: Flower){
         selectedFlower = flower
         isCartOpen = false
     }
@@ -50,7 +52,7 @@ class FlowerViewModel: ViewModel() {
         cartItems = cartItems.filter{it.first.id != flower.id}
     }
 
-    fun updateQuantity(flower:Flower, newQuantity: Int): Boolean{
+    fun updateQuantity(flower: Flower, newQuantity: Int): Boolean{
         if (newQuantity <= 0){
             removeFromCart(flower)
             return true

@@ -1,4 +1,4 @@
-package com.example.floramarket
+package com.example.floramarket.create
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,12 +26,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.floramarket.model.BouquetDraft
+import com.example.floramarket.create.CreateBouquetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateBouquetScreen(
-    viewModel: CreateBouquetViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    viewModel: CreateBouquetViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     onBouquetCreated: (BouquetDraft) -> Unit
 ) {

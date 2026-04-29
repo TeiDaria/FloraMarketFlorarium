@@ -1,4 +1,4 @@
-package com.example.floramarket
+package com.example.floramarket.model
 
 data class Flower(
     val id: String,
