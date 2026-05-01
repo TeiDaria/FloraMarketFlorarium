@@ -48,7 +48,8 @@ fun CartScreen(
     onClose: () -> Unit,
     onRemoveItem: (Flower) -> Unit,
     onUpdateQuantity: (Flower, Int) -> Boolean,
-    onFlowerClick: (Flower) -> Unit
+    onFlowerClick: (Flower) -> Unit,
+    onNavigateToFavorites: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -140,7 +141,7 @@ fun CartScreen(
                         },
                         label = { Text("Избранное")},
                         selected = false,
-                        onClick = { /* Будет позже */ }
+                        onClick = onNavigateToFavorites
                     )
 
                     NavigationBarItem(

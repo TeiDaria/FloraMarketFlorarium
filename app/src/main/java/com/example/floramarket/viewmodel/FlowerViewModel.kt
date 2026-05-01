@@ -9,8 +9,23 @@ import com.example.floramarket.model.BouquetDraft
 import com.example.floramarket.model.Flower
 
 class FlowerViewModel: ViewModel() {
-    private val _allFlowers = mutableStateListOf<Flower>()
-    val allFlowers: List<Flower> = _allFlowers // ← Только для чтения
+    val allFlowers = mutableStateListOf<Flower>()
+    val favoriteIds = mutableStateListOf<String>()
+
+    val favoriteFlowers: List<Flower>
+        get() = allFlowers.filter { it.id in favoriteIds }
+
+    fun isFavorite(flowerId: String): Boolean {
+        return flowerId in favoriteIds
+    }
+
+    fun toggleFavorite(flowerId: String){
+        if (flowerId in favoriteIds){
+            favoriteIds.remove(flowerId)
+        } else {
+            favoriteIds.add(flowerId)
+        }
+    }
 
     var selectedFlower by mutableStateOf<Flower?>(null)
         private set
@@ -90,10 +105,6 @@ class FlowerViewModel: ViewModel() {
         selectedFlower = flower
     }
 
-    fun openCart(){
-        isCartOpen = true
-    }
-
     fun addNewBouquet(bouquet: BouquetDraft) {
         val newFlower = Flower(
             id = System.currentTimeMillis().toString(),
@@ -105,6 +116,6 @@ class FlowerViewModel: ViewModel() {
             availableQuantity = bouquet.quantity ?: 1
         )
 
-        _allFlowers.add(newFlower)
+        allFlowers.add(newFlower)
     }
 }

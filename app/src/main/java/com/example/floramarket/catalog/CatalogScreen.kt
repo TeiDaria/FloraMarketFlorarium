@@ -47,7 +47,10 @@ fun CatalogScreen(
     cartItemCount: Int,
     onFlowerClick: (Flower) -> Unit,
     onCartClick: () -> Unit,
-    onCreateBouquetClick: () -> Unit
+    onCreateBouquetClick: () -> Unit,
+    isFavorite: (String) -> Boolean,
+    onToggleFavorite: (String) -> Unit,
+    onFavoriteClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -99,7 +102,7 @@ fun CatalogScreen(
                     },
                     label = { Text("Избранное")},
                     selected = false,
-                    onClick = { /* Будет позже */ }
+                    onClick = onFavoriteClick
                 )
 
                 NavigationBarItem(
@@ -181,6 +184,8 @@ fun CatalogScreen(
                 items(flowers, key = {it.id}) { flower ->
                     FlowerCard(
                         flower = flower,
+                        isFavorite = isFavorite(flower.id),
+                        onFavoriteClick = { onToggleFavorite(flower.id)},
                         onClick = { onFlowerClick(flower) }
                     )
                 }

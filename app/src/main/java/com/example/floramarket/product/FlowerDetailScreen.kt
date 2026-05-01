@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
@@ -57,6 +58,8 @@ import kotlin.collections.ifEmpty
 @Composable
 fun FlowerDetailScreen(
     flower: Flower,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
     onClose: () -> Unit,
     onAddToCart: (Flower) -> Boolean,
     onUpdateQuantity: (Flower, Int) -> Boolean,
@@ -64,7 +67,8 @@ fun FlowerDetailScreen(
     cartItemCount: Int,
     cameFromCart: Boolean,
     onNavigateToHome: () -> Unit,
-    onNavigateToCart: () -> Unit
+    onNavigateToCart: () -> Unit,
+    onNavigateToFavorites: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -212,7 +216,7 @@ fun FlowerDetailScreen(
                         },
                         label = { Text("Избранное") },
                         selected = false,
-                        onClick = { /* Будет позже */ }
+                        onClick = onNavigateToFavorites
                     )
 
                     NavigationBarItem(
@@ -267,7 +271,7 @@ fun FlowerDetailScreen(
                 if (photos.size > 1) {
                     Box(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
+                            .align(Alignment.BottomEnd)
                             .padding(16.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.Black.copy(alpha = 0.6f))
@@ -280,6 +284,22 @@ fun FlowerDetailScreen(
                             fontWeight = FontWeight.Medium
                         )
                     }
+                }
+                IconButton(
+                    onClick = onFavoriteClick,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.Black.copy(alpha = 0.4f))
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "В избранное",
+                        tint = if (isFavorite) Color.Red else Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
 

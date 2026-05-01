@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import com.example.floramarket.cart.CartScreen
 import com.example.floramarket.catalog.CatalogScreen
 import com.example.floramarket.create.CreateBouquetScreen
+import com.example.floramarket.favorite.FavoritesScreen
 import com.example.floramarket.product.FlowerDetailScreen
 import com.example.floramarket.viewmodel.FlowerViewModel
 
@@ -16,6 +17,7 @@ fun FlowerApp(viewModel: FlowerViewModel){
     val selectedFlower = viewModel.selectedFlower
     val cameFromCart = viewModel.isCartOpen
     var isCreatingBouquet by remember { mutableStateOf(false) }
+    var showFavorites by remember {mutableStateOf(false)}
 
     when {
         isCreatingBouquet -> {
@@ -27,9 +29,28 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 }
             )
         }
+        showFavorites -> {
+            FavoritesScreen(
+                favoriteFlowers = viewModel.favoriteFlowers,
+                cartItemCount = viewModel.getItemCount(),
+                onFlowerClick = {
+                    viewModel.selectFlower(it)
+                    showFavorites = false
+                },
+                onCartClick = {
+                    showFavorites = false
+                    viewModel.isCartOpen = true
+                },
+                onNavigateToHome = { showFavorites= false },
+                onToggleFavorite = {viewModel.toggleFavorite(it)},
+                isFavorite = {viewModel.isFavorite(it)}
+            )
+        }
         selectedFlower != null -> {
             FlowerDetailScreen(
                 flower = selectedFlower,
+                isFavorite = viewModel.isFavorite(selectedFlower.id),
+                onFavoriteClick = {viewModel.toggleFavorite(selectedFlower.id)},
                 onClose = {viewModel.closeDetail()},
                 onAddToCart = {flower -> viewModel.addToCart(flower)},
                 onUpdateQuantity = { flower, qty -> viewModel.updateQuantity(flower,qty)},
@@ -44,6 +65,12 @@ fun FlowerApp(viewModel: FlowerViewModel){
                     viewModel.closeDetail()
                     viewModel.isCartOpen = true
                 }
+                ,
+                onNavigateToFavorites = {
+                    viewModel.closeDetail()
+                    viewModel.isCartOpen = false
+                    showFavorites = true
+                }
             )
         }
         viewModel.isCartOpen -> {
@@ -55,6 +82,10 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 onUpdateQuantity = { flower, qty -> viewModel.updateQuantity(flower,qty)},
                 onFlowerClick = { flower ->
                     viewModel.selectFlowerFromCart(flower)
+                },
+                onNavigateToFavorites = {
+                    viewModel.isCartOpen = false
+                    showFavorites = true
                 }
             )
         }
@@ -64,7 +95,10 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 cartItemCount = viewModel.getItemCount(),
                 onFlowerClick = {viewModel.selectFlower(it)},
                 onCartClick = {viewModel.toggleCart()},
-                onCreateBouquetClick = { isCreatingBouquet = true }
+                onCreateBouquetClick = { isCreatingBouquet = true },
+                onFavoriteClick = { showFavorites = true },
+                isFavorite = { viewModel.isFavorite(it) },
+                onToggleFavorite = { viewModel.toggleFavorite(it) },
             )
         }
     }
