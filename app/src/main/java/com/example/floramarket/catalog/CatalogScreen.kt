@@ -50,7 +50,8 @@ fun CatalogScreen(
     onCreateBouquetClick: () -> Unit,
     isFavorite: (String) -> Boolean,
     onToggleFavorite: (String) -> Unit,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -114,7 +115,7 @@ fun CatalogScreen(
                     },
                     label = { Text("Профиль") },
                     selected = false,
-                    onClick = { /* Будет позже */ }
+                    onClick = onProfileClick
                 )
             }
         },

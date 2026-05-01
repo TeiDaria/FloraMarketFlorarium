@@ -68,7 +68,8 @@ fun FlowerDetailScreen(
     cameFromCart: Boolean,
     onNavigateToHome: () -> Unit,
     onNavigateToCart: () -> Unit,
-    onNavigateToFavorites: () -> Unit
+    onNavigateToFavorites: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -228,7 +229,7 @@ fun FlowerDetailScreen(
                         },
                         label = { Text("Профиль") },
                         selected = false,
-                        onClick = { /* Будет позже */ }
+                        onClick = onNavigateToProfile
                     )
                 }
             }

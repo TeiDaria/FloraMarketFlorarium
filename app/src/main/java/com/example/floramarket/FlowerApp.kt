@@ -10,6 +10,7 @@ import com.example.floramarket.catalog.CatalogScreen
 import com.example.floramarket.create.CreateBouquetScreen
 import com.example.floramarket.favorite.FavoritesScreen
 import com.example.floramarket.product.FlowerDetailScreen
+import com.example.floramarket.profile.ProfileScreen
 import com.example.floramarket.viewmodel.FlowerViewModel
 
 @Composable
@@ -18,6 +19,7 @@ fun FlowerApp(viewModel: FlowerViewModel){
     val cameFromCart = viewModel.isCartOpen
     var isCreatingBouquet by remember { mutableStateOf(false) }
     var showFavorites by remember {mutableStateOf(false)}
+    var showProfile by remember { mutableStateOf(false) }
 
     when {
         isCreatingBouquet -> {
@@ -43,7 +45,25 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 },
                 onNavigateToHome = { showFavorites= false },
                 onToggleFavorite = {viewModel.toggleFavorite(it)},
-                isFavorite = {viewModel.isFavorite(it)}
+                isFavorite = {viewModel.isFavorite(it)},
+                onNavigateToProfile = {
+                    showFavorites = false
+                    showProfile = true
+                }
+            )
+        }
+        showProfile -> {
+            ProfileScreen(
+                cartItemCount = viewModel.getItemCount(),
+                onNavigateToHome = {showProfile = false},
+                onNavigateToCart = {
+                    showProfile = false
+                    viewModel.isCartOpen = true
+                },
+                onNavigateToFavorites = {
+                    showProfile = false
+                    showFavorites = true
+                }
             )
         }
         selectedFlower != null -> {
@@ -64,12 +84,16 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 onNavigateToCart = {
                     viewModel.closeDetail()
                     viewModel.isCartOpen = true
-                }
-                ,
+                },
                 onNavigateToFavorites = {
                     viewModel.closeDetail()
                     viewModel.isCartOpen = false
                     showFavorites = true
+                },
+                onNavigateToProfile = {
+                    viewModel.closeDetail()
+                    viewModel.isCartOpen = false
+                    showProfile = true
                 }
             )
         }
@@ -86,6 +110,10 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 onNavigateToFavorites = {
                     viewModel.isCartOpen = false
                     showFavorites = true
+                },
+                onNavigateToProfile = {
+                    viewModel.isCartOpen = false
+                    showProfile = true
                 }
             )
         }
@@ -101,6 +129,7 @@ fun FlowerApp(viewModel: FlowerViewModel){
                 onFavoriteClick = { showFavorites = true },
                 isFavorite = { viewModel.isFavorite(it) },
                 onToggleFavorite = { viewModel.toggleFavorite(it) },
+                onProfileClick = {showProfile = true}
             )
         }
     }

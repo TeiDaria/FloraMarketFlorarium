@@ -27,7 +27,8 @@ fun FavoritesScreen(
     onCartClick: () -> Unit,
     onNavigateToHome: () -> Unit,
     onToggleFavorite: (String) -> Unit,
-    isFavorite: (String) -> Boolean
+    isFavorite: (String) -> Boolean,
+    onNavigateToProfile: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -74,7 +75,7 @@ fun FavoritesScreen(
                     icon = { Icon(Icons.Default.Person, contentDescription = "Профиль") },
                     label = { Text("Профиль") },
                     selected = false,
-                    onClick = { }
+                    onClick = onNavigateToProfile
                 )
             }
         }
