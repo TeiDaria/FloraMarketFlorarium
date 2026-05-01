@@ -1,12 +1,18 @@
 package com.example.floramarket.create
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.floramarket.model.BouquetDraft
+import com.example.floramarket.viewmodel.GeneratorViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class CreateBouquetViewModel : ViewModel() {
+    private val generatorViewModel = GeneratorViewModel()
 
     var imageUrls by mutableStateOf<List<String>>(emptyList())
         private set
@@ -33,6 +39,17 @@ class CreateBouquetViewModel : ViewModel() {
         get() = quantityInput.toIntOrNull()
 
     var isGeneratingName by mutableStateOf(false)
+        private set
+
+    var generationError by mutableStateOf<String?>(null)
+        private set
+
+    // Список сгенерированных названий
+    var generatedNames by mutableStateOf<List<String>>(emptyList())
+        private set
+
+    // Флаг для показа диалога подтверждения повторной генерации
+    var showRegenerateDialog by mutableStateOf(false)
         private set
 
     fun updateName(newName: String){
@@ -74,10 +91,93 @@ class CreateBouquetViewModel : ViewModel() {
         imageUrls = newList
     }
 
-    fun generateName() {
+    fun onGenerateClick() {
+        if (shortDescription.isBlank()) {
+            generationError = "Введите описание букета для генерации"
+            return
+        }
+
+        if (generatedNames.isNotEmpty()) {
+            showRegenerateDialog = true
+            return
+        }
+
+        startGeneration()
+    }
+
+    fun confirmRegenerate() {
+        showRegenerateDialog = false
+        startGeneration()
+    }
+
+    fun cancelRegenerate() {
+        showRegenerateDialog = false
+    }
+
+    private fun startGeneration(){
         isGeneratingName = true
-        // Здесь будет запрос к ИИ
-        isGeneratingName = false
+        generationError = null
+        generatedNames = emptyList()
+
+        Log.d("CreateBouquetVM", "startGeneration()")
+
+        generatorViewModel.generateName(shortDescription)
+
+        viewModelScope.launch {
+            var waitTime = 0
+            val maxWaitTime = 30000L // 30 секунд максимум
+
+            Log.d("CreateBouquetVM", "Ждём завершения генерации...")
+
+            while (generatorViewModel.isLoading && waitTime < maxWaitTime){
+                delay(200)
+                waitTime += 200
+            }
+
+            Log.d("CreateBouquetVM", "Ожидание завершено, waitTime=$waitTime ms")
+
+            isGeneratingName = false
+
+            if (waitTime >= maxWaitTime) {
+                Log.e("CreateBouquetVM", "Таймаут! Ждали ${maxWaitTime}ms")
+                generationError = "Превышено время ожидания (30 секунд)"
+                return@launch
+            }
+
+            Log.d("CreateBouquetVM", "generatedName='${generatorViewModel.generatedName}'")
+            Log.d("CreateBouquetVM", "error='${generatorViewModel.error}'")
+
+            if (generatorViewModel.generatedName.isNotEmpty()){
+                val names = generatorViewModel.generatedName
+                    .split("\n")
+                    .map{it.trim()}
+                    .filter { it.isNotEmpty() }
+
+                Log.d("CreateBouquetVM", "Распаршено названий: ${names.size}")
+                names.forEachIndexed { i, n ->
+                    Log.d("CreateBouquetVM", "   ${i+1}. '$n'")
+                }
+
+                if (names.isNotEmpty()){
+                    generatedNames = names
+                } else {
+                    generationError = "Не удалось распознать сгенерированные названия"
+                }
+            } else if (generatorViewModel.error != null){
+                generationError = generatorViewModel.error
+            } else {
+                generationError = "Модель не вернула результат"
+            }
+        }
+    }
+
+    fun selectGeneratedName(selectedName: String){
+        name = selectedName
+    }
+
+    fun clearGenerationError(){
+        generationError = null
+        generatorViewModel.clearError()
     }
 
     fun publishBouquet(

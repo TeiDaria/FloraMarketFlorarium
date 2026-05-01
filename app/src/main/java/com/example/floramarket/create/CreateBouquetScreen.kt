@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -30,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.floramarket.model.BouquetDraft
 import com.example.floramarket.create.CreateBouquetViewModel
+import org.w3c.dom.Text
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +62,32 @@ fun CreateBouquetScreen(
             )
         }
     ) { paddingValues ->
+
+        if (viewModel.showRegenerateDialog){
+            AlertDialog(
+                onDismissRequest = {viewModel.cancelRegenerate()},
+                title = { Text("Сгенерировать заново?") },
+                text = {
+                    Text(
+                        "У вас уже есть сгенерированные названия. " +
+                                "При повторной генерации они будут удалены.\n\n" +
+                                "Название, которое вы уже выбрали (в поле «Название букета»), останется.\n\n" +
+                                "Хотите продолжить?"
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {viewModel.confirmRegenerate()}) {
+                        Text("Да, сгенерировать заново")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {viewModel.cancelRegenerate()}) {
+                        Text("Отмена")
+                    }
+                }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -132,12 +160,25 @@ fun CreateBouquetScreen(
                 onValueChange = { viewModel.updateShortDescription(it) },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Красные розы и желтые тюльпаны...") },
-                maxLines = 2
+                maxLines = 2,
+                trailingIcon = {
+                    if (viewModel.shortDescription.isNotEmpty()){
+                        IconButton(
+                            onClick = {viewModel.updateShortDescription("")}
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Очистить",
+                                tint = Color.Gray
+                            )
+                        }
+                    }
+                }
             )
 
             // Кнопка генерации названия
             Button(
-                onClick = { viewModel.generateName() },
+                onClick = { viewModel.onGenerateClick() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -155,6 +196,93 @@ fun CreateBouquetScreen(
                     Text("Генерация...")
                 } else {
                     Text("Сгенерировать название")
+                }
+            }
+
+            // Ошибка генерации
+            if (viewModel.generationError != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFEBEE)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = viewModel.generationError!!,
+                            color = Color(0xFFC62828),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+
+            // Сгенерированные названия
+            if (viewModel.generatedNames.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFF3E5F5)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Text(
+                            text = "Сгенерированные названия:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color(0xFF6A1B9A)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        viewModel.generatedNames.forEachIndexed { index, name ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.selectGeneratedName(name) }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "${index + 1}.",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF6A1B9A),
+                                    modifier = Modifier.width(24.dp)
+                                )
+                                Text(
+                                    text = name,
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (viewModel.name == name) {
+                                    Icon(
+                                        Icons.Filled.Check,
+                                        contentDescription = "Выбрано",
+                                        tint = Color(0xFF4CAF50),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Нажмите на название чтобы выбрать его",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
                 }
             }
 
