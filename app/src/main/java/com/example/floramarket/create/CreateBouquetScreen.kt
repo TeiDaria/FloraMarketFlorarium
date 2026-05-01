@@ -108,10 +108,12 @@ fun CreateBouquetScreen(
                 item {
                     var showImagePicker by remember { mutableStateOf(false)}
 
-                    rememberImagePicker(
+                    rememberMultipleImagePicker(
                         showPicker = showImagePicker,
-                        onImageSelected = { uri ->
-                            viewModel.addImage(uri.toString())
+                        onImageSelected = { uris ->
+                            uris.forEach{ uri ->
+                                viewModel.addImage(uri.toString())
+                            }
                         },
                         onPickerDismissed = {
                             showImagePicker = false

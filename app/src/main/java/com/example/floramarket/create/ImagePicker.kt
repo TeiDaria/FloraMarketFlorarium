@@ -12,9 +12,9 @@ import java.io.File
 import java.io.FileOutputStream
 
 @Composable
-fun rememberImagePicker(
+fun rememberMultipleImagePicker(
     showPicker: Boolean,
-    onImageSelected: (Uri) -> Unit,
+    onImageSelected: (List<Uri>) -> Unit,
     onPickerDismissed: () -> Unit
 ) {
     val context = LocalContext.current
@@ -36,12 +36,12 @@ fun rememberImagePicker(
     } }
 
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        uri?.let {
-            val localPath = saveImageToInternal(it)
-            localPath?.let { path ->
-                onImageSelected(Uri.parse(path))
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 10)
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()){
+            val localPaths = uris.mapNotNull { saveImageToInternal(it) }
+            if (localPaths.isNotEmpty()){
+                onImageSelected(localPaths.map {Uri.parse(it)})
             }
         }
         onPickerDismissed()

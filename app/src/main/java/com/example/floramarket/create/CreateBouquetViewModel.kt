@@ -247,6 +247,9 @@ class CreateBouquetViewModel : ViewModel() {
         priceInput = ""
         quantityInput = ""
         isGeneratingName = false
+        generationError = null
+        generatedNames = emptyList()
+        showRegenerateDialog = false
     }
 
 }

@@ -93,7 +93,9 @@ fun FlowerApp(viewModel: FlowerViewModel){
             CatalogScreen(
                 flowers = viewModel.allFlowers,
                 cartItemCount = viewModel.getItemCount(),
-                onFlowerClick = {viewModel.selectFlower(it)},
+                onFlowerClick = {
+                    viewModel.selectFlower(it)
+                },
                 onCartClick = {viewModel.toggleCart()},
                 onCreateBouquetClick = { isCreatingBouquet = true },
                 onFavoriteClick = { showFavorites = true },

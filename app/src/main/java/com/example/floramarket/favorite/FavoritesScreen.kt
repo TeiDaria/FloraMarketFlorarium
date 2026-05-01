@@ -50,7 +50,6 @@ fun FavoritesScreen(
                             Icon(
                                 Icons.Default.ShoppingCart,
                                 contentDescription = "Корзина",
-                                modifier = Modifier.size(28.dp)
                             )
                             if (cartItemCount > 0) {
                                 Badge(modifier = Modifier.align(Alignment.TopEnd)) {
