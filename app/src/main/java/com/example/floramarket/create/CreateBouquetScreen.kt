@@ -305,7 +305,7 @@ fun CreateBouquetScreen(
             )
 
             Text(
-                text = "Красивое описание от продавца",
+                text = "Красивое описание от продавца (необязательно)",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )

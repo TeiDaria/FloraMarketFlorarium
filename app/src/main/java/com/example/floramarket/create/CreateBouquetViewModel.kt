@@ -193,10 +193,7 @@ class CreateBouquetViewModel : ViewModel() {
                 onError("Введите название букета")
                 return
             }
-            fullDescription.isBlank() -> {
-                onError("Добавьте описание букета")
-                return
-            }
+
             price == null -> {
                 onError("Укажите корректную цену")
                 return
@@ -234,7 +231,6 @@ class CreateBouquetViewModel : ViewModel() {
     fun isValid(): Boolean {
         return imageUrls.isNotEmpty() &&
                 name.isNotBlank() &&
-                fullDescription.isNotBlank() &&
                 price != null &&
                 quantity != null
     }
